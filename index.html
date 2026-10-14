@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prime parole in inglese</title>
+<style>
+  html { font-size: 14px; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+    background: linear-gradient(160deg, #fff4d6, #ffe0ec 55%, #dff1ff);
+    color: #3a2d4d; display: flex; justify-content: center; padding: 16px;
+  }
+  #app { width: 100%; max-width: 640px; text-align: center; }
+  h1 { font-size: 2rem; margin: 8px 0 4px; color: #e0457b; }
+  .sub { margin: 0 0 18px; font-size: 1.1rem; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  button {
+    font: inherit; cursor: pointer; border: 0; border-radius: 18px; background: #fff;
+    box-shadow: 0 4px 0 rgba(58,45,77,.18); transition: transform .08s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(58,45,77,.18); }
+  .cat { padding: 18px 8px; font-size: 1.3rem; font-weight: bold; }
+  .cat .ico { display: block; font-size: 2.8rem; margin-bottom: 6px; }
+  .bar { display: flex; gap: 8px; justify-content: center; margin: 10px 0 16px; flex-wrap: wrap; }
+  .pill { padding: 10px 16px; font-weight: bold; font-size: 1.05rem; }
+  .pill.on { background: #e0457b; color: #fff; }
+  .back { background: transparent; box-shadow: none; font-size: 1.05rem; padding: 6px 10px; text-decoration: underline; }
+  .card { padding: 16px 6px; }
+  .card .em { font-size: 3.6rem; line-height: 1.1; }
+  .card .w { font-size: 1.3rem; font-weight: bold; margin-top: 4px; }
+  .card .it { font-size: .95rem; opacity: .7; }
+  .big { font-size: 1.6rem; font-weight: bold; margin: 8px 0 14px; }
+  .listen { padding: 12px 22px; font-size: 1.2rem; font-weight: bold; background: #ffd23f; margin-bottom: 14px; }
+  .opt .em { font-size: 4rem; line-height: 1.1; padding: 14px 0; }
+  .opt.ok { background: #b9f0c4; }
+  .opt.no { background: #ffc4c4; animation: shake .3s; }
+  @keyframes shake { 25% { transform: translateX(-6px);} 75% { transform: translateX(6px);} }
+  .score { font-size: 1.2rem; margin-top: 14px; }
+  .end .em { font-size: 4rem; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const CATS = {
+  numeri: { nome: "Numeri", ico: "🔢", parole: [
+    ["1️⃣","one","uno"],["2️⃣","two","due"],["3️⃣","three","tre"],["4️⃣","four","quattro"],["5️⃣","five","cinque"],
+    ["6️⃣","six","sei"],["7️⃣","seven","sette"],["8️⃣","eight","otto"],["9️⃣","nine","nove"],["🔟","ten","dieci"] ]},
+  colori: { nome: "Colori", ico: "🎨", parole: [
+    ["🔴","red","rosso"],["🔵","blue","blu"],["🟢","green","verde"],["🟡","yellow","giallo"],["🟠","orange","arancione"],
+    ["🟣","purple","viola"],["🩷","pink","rosa"],["🟤","brown","marrone"],["⚫","black","nero"],["⚪","white","bianco"] ]},
+  animali: { nome: "Animali", ico: "🐶", parole: [
+    ["🐶","dog","cane"],["🐱","cat","gatto"],["🐰","rabbit","coniglio"],["🐮","cow","mucca"],["🐷","pig","maiale"],
+    ["🐴","horse","cavallo"],["🐦","bird","uccello"],["🐟","fish","pesce"],["🐘","elephant","elefante"],["🦁","lion","leone"] ]},
+  frutta: { nome: "Frutta", ico: "🍎", parole: [
+    ["🍎","apple","mela"],["🍌","banana","banana"],["🍓","strawberry","fragola"],["🍇","grapes","uva"],["🍊","orange","arancia"],
+    ["🍐","pear","pera"],["🍉","watermelon","anguria"],["🍑","peach","pesca"],["🍒","cherries","ciliegie"],["🍋","lemon","limone"] ]},
+  famiglia: { nome: "Famiglia", ico: "👨‍👩‍👧", parole: [
+    ["👩","mum","mamma"],["👨","dad","papà"],["👦","brother","fratello"],["👧","sister","sorella"],["👵","grandma","nonna"],
+    ["👴","grandpa","nonno"],["👶","baby","neonato"],["🧒","child","bambino"] ]},
+  corpo: { nome: "Corpo", ico: "🖐️", parole: [
+    ["👀","eyes","occhi"],["👃","nose","naso"],["👄","mouth","bocca"],["👂","ear","orecchio"],["🖐️","hand","mano"],
+    ["🦶","foot","piede"],["🦷","tooth","dente"],["👅","tongue","lingua"] ]}
+};
+
+const app = document.getElementById("app");
+let voce = null;
+function scegliVoce() {
+  const v = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+  voce = v.find(x => /^en[-_]GB/i.test(x.lang)) || v.find(x => /^en/i.test(x.lang)) || null;
+}
+if (window.speechSynthesis) { scegliVoce(); speechSynthesis.onvoiceschanged = scegliVoce; }
+function dì(testo) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(testo);
+  u.lang = "en-GB"; u.rate = 0.8; u.pitch = 1.1;
+  if (voce) u.voice = voce;
+  speechSynthesis.speak(u);
+}
+const mescola = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(p => p[1]);
+
+function home() {
+  app.innerHTML = `<h1>Prime parole in inglese</h1>
+    <p class="sub">Scegli la categoria e divertiti!</p>
+    <div class="grid">${Object.entries(CATS).map(([k, c]) =>
+      `<button class="cat" data-k="${k}"><span class="ico">${c.ico}</span>${c.nome}</button>`).join("")}</div>`;
+  app.querySelectorAll(".cat").forEach(b => b.onclick = () => categoria(b.dataset.k, "impara"));
+}
+
+function categoria(k, modo) {
+  const c = CATS[k];
+  app.innerHTML = `<button class="back" id="b">← Categorie</button>
+    <h1>${c.ico} ${c.nome}</h1>
+    <div class="bar">
+      <button class="pill ${modo === "impara" ? "on" : ""}" id="m1">👂 Impara</button>
+      <button class="pill ${modo === "gioca" ? "on" : ""}" id="m2">🎮 Gioca</button>
+    </div><div id="corpo"></div>`;
+  document.getElementById("b").onclick = home;
+  document.getElementById("m1").onclick = () => categoria(k, "impara");
+  document.getElementById("m2").onclick = () => categoria(k, "gioca");
+  modo === "impara" ? impara(k) : gioca(k);
+}
+
+function impara(k) {
+  const c = CATS[k];
+  document.getElementById("corpo").innerHTML =
+    `<p class="sub">Tocca una carta per ascoltare la parola.</p>
+     <div class="grid">${c.parole.map((p, i) =>
+      `<button class="card" data-i="${i}"><div class="em">${p[0]}</div><div class="w">${p[1]}</div><div class="it">${p[2]}</div></button>`).join("")}</div>`;
+  document.querySelectorAll(".card").forEach(b => b.onclick = () => dì(c.parole[b.dataset.i][1]));
+}
+
+function gioca(k) {
+  const c = CATS[k];
+  const ordine = mescola(c.parole).slice(0, 8);
+  let n = 0, punti = 0;
+  function turno() {
+    if (n >= ordine.length) return fine();
+    const giusta = ordine[n];
+    const altre = mescola(c.parole.filter(p => p !== giusta)).slice(0, 3);
+    const opz = mescola([giusta, ...altre]);
+    document.getElementById("corpo").innerHTML =
+      `<div class="big">Quale immagine è “${giusta[1]}”?</div>
+       <button class="listen" id="asc">🔊 Ascolta</button>
+       <div class="grid">${opz.map((p, i) => `<button class="opt" data-i="${i}"><div class="em">${p[0]}</div></button>`).join("")}</div>
+       <div class="score">Domanda ${n + 1} di ${ordine.length} · ⭐ ${punti}</div>`;
+    document.getElementById("asc").onclick = () => dì(giusta[1]);
+    dì(giusta[1]);
+    let risposto = false;
+    document.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+      if (risposto) return;
+      const sc = opz[b.dataset.i];
+      if (sc === giusta) {
+        risposto = true; punti++; b.classList.add("ok"); dì("well done");
+        setTimeout(() => { n++; turno(); }, 1100);
+      } else { b.classList.add("no"); dì(sc[1]); }
+    });
+  }
+  function fine() {
+    const msg = punti >= 7 ? "Bravissimo!" : punti >= 4 ? "Bravo!" : "Riprova, stai imparando!";
+    document.getElementById("corpo").innerHTML =
+      `<div class="end"><div class="em">${punti >= 7 ? "🏆" : "🌟"}</div>
+       <div class="big">${msg}</div><div class="score">⭐ ${punti} su ${ordine.length}</div><br>
+       <button class="pill on" id="ri">🔁 Gioca ancora</button></div>`;
+    dì("great job");
+    document.getElementById("ri").onclick = () => gioca(k);
+  }
+  turno();
+}
+
+home();
+</script>
+</body>
+</html>
