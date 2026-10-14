@@ -8,9 +8,9 @@
   html { font-size: 14px; }
   * { box-sizing: border-box; }
   body {
-    margin: 0; min-height: 100vh; font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+    margin: 0; font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
     background: linear-gradient(160deg, #fff4d6, #ffe0ec 55%, #dff1ff);
-    color: #3a2d4d; display: flex; justify-content: center; padding: 16px;
+    color: #3a2d4d; display: flex; justify-content: center; padding: 16px; overflow: hidden;
   }
   #app { width: 100%; max-width: 640px; text-align: center; }
   h1 { font-size: 2rem; margin: 8px 0 4px; color: #e0457b; }
@@ -153,6 +153,14 @@ function gioca(k) {
 }
 
 home();
+
+// Comunica l'altezza al post di Blogger, così il riquadro si adatta al contenuto
+function inviaAltezza() {
+  const h = Math.ceil(app.getBoundingClientRect().height) + 40;
+  parent.postMessage({ tipo: "prime-parole-altezza", h: h }, "*");
+}
+if (window.ResizeObserver) new ResizeObserver(inviaAltezza).observe(app);
+window.addEventListener("load", inviaAltezza);
 </script>
 </body>
 </html>
